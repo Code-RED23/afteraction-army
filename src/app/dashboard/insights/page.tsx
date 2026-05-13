@@ -14,7 +14,7 @@ interface InsightsData {
     actionItems: { open: number; closed: number; highPriority: number };
     topThemes: { theme: string; count: number }[];
   };
-  recentAARs: { id: string; summary: string | null; incident_type: string | null; incident_date: string | null }[];
+  recentAARs: { id: string; summary: string | null; mission_type: string | null; mission_date: string | null }[];
 }
 
 export default function InsightsPage() {
@@ -33,7 +33,7 @@ export default function InsightsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-green-400 animate-spin" />
       </div>
     );
   }
@@ -45,7 +45,7 @@ export default function InsightsPage() {
         <div className="text-center py-16 border border-dashed border-gray-800 rounded-xl">
           <BarChart3 className="w-10 h-10 text-gray-700 mx-auto mb-3" />
           <h3 className="text-sm font-medium text-gray-400 mb-1">No data yet</h3>
-          <p className="text-xs text-gray-600">Complete a few debriefs to see patterns emerge.</p>
+          <p className="text-xs text-gray-600">Complete a few AARs to see patterns emerge.</p>
         </div>
       </div>
     );
@@ -69,7 +69,7 @@ export default function InsightsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-amber-400" />
+            <BarChart3 className="w-4 h-4 text-green-400" />
             <span className="text-xs text-gray-500 uppercase tracking-wider">Total AARs</span>
           </div>
           <p className="text-2xl font-bold text-gray-100">{stats.total}</p>
@@ -101,7 +101,7 @@ export default function InsightsPage() {
             <span className="text-xs text-gray-500 uppercase tracking-wider">Types</span>
           </div>
           <p className="text-2xl font-bold text-gray-100">{stats.byType.length}</p>
-          <p className="text-xs text-gray-600 mt-1">incident categories</p>
+          <p className="text-xs text-gray-600 mt-1">mission categories</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export default function InsightsPage() {
         {/* Incident Type Breakdown */}
         <div className="border border-gray-800 rounded-lg bg-gray-900/50">
           <div className="px-4 py-3 border-b border-gray-800">
-            <h3 className="text-sm font-semibold text-gray-200">By Incident Type</h3>
+            <h3 className="text-sm font-semibold text-gray-200">By Mission Type</h3>
           </div>
           <div className="p-4 space-y-3">
             {stats.byType.map(([type, count]) => (
@@ -120,14 +120,14 @@ export default function InsightsPage() {
                 </div>
                 <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-amber-500 rounded-full transition-all"
+                    className="h-full bg-green-500 rounded-full transition-all"
                     style={{ width: `${(count / maxTypeCount) * 100}%` }}
                   />
                 </div>
               </div>
             ))}
             {stats.byType.length === 0 && (
-              <p className="text-xs text-gray-600 text-center py-4">No incident types recorded yet.</p>
+              <p className="text-xs text-gray-600 text-center py-4">No mission types recorded yet.</p>
             )}
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function InsightsPage() {
                     className={cn(
                       'text-xs font-mono px-2.5 py-1 rounded-full border',
                       t.count >= 5
-                        ? 'bg-amber-900/30 text-amber-400 border-amber-800/40'
+                        ? 'bg-amber-900/30 text-green-400 border-amber-800/40'
                         : t.count >= 3
                         ? 'bg-gray-800 text-gray-300 border-gray-700'
                         : 'bg-gray-900 text-gray-500 border-gray-800'
@@ -207,10 +207,10 @@ export default function InsightsPage() {
               <Link key={aar.id} href={`/dashboard/${aar.id}`} className="block px-4 py-3 hover:bg-gray-900/80 transition-colors">
                 <p className="text-sm text-gray-300 truncate">{aar.summary || 'Untitled'}</p>
                 <div className="flex gap-3 mt-1">
-                  {aar.incident_type && <span className="text-xs text-gray-600">{aar.incident_type}</span>}
-                  {aar.incident_date && (
+                  {aar.mission_type && <span className="text-xs text-gray-600">{aar.mission_type}</span>}
+                  {aar.mission_date && (
                     <span className="text-xs text-gray-600">
-                      {new Date(aar.incident_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(aar.mission_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   )}
                 </div>

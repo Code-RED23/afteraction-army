@@ -14,14 +14,19 @@ export async function getAuthContext(): Promise<AuthContext> {
     .single();
 
   if (error || !profile) throw new Error('Profile not found');
-  if (!profile.agency_id) throw new Error('No agency assigned');
+  if (!profile.platoon_id) throw new Error('No unit assigned');
 
   return {
     userId,
     profile: profile as Profile,
-    agencyId: profile.agency_id,
+    platoonId: profile.platoon_id,
+    squadId: profile.squad_id || null,
     role: profile.role,
   };
+}
+
+export async function ensureNCO(ctx: AuthContext): Promise<void> {
+  if (ctx.role !== 'admin' && ctx.role !== 'nco') throw new Error('Forbidden: NCO/admin access required');
 }
 
 export async function ensureAdmin(ctx: AuthContext): Promise<void> {

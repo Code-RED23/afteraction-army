@@ -14,7 +14,7 @@ const EMPTY_AAR: LiveAARState = {
   why_difference: '',
   sustain_improve: '',
   summary: '',
-  incident_type: '',
+  mission_type: '',
   tags: [],
   action_items: [],
 };
@@ -164,7 +164,7 @@ export default function DebriefPage() {
                   why_difference: update.why_difference || prev.why_difference,
                   sustain_improve: update.sustain_improve || prev.sustain_improve,
                   summary: update.summary || prev.summary,
-                  incident_type: update.incident_type || prev.incident_type,
+                  mission_type: update.mission_type || update.incident_type || prev.mission_type,
                   tags: update.tags?.length > 0 ? update.tags : prev.tags,
                   action_items: update.action_items?.length > 0 ? update.action_items : prev.action_items,
                 }));
@@ -250,10 +250,10 @@ export default function DebriefPage() {
         {/* Input area */}
         <div className="border-t border-gray-800 p-4">
           {isComplete && (
-            <div className="mb-3 bg-amber-950/20 border border-amber-900/30 rounded-lg p-3 flex items-center justify-between">
-              <p className="text-sm text-amber-300">Debrief complete. Ready to finalize?</p>
+            <div className="mb-3 bg-green-950/20 border border-green-900/30 rounded-lg p-3 flex items-center justify-between">
+              <p className="text-sm text-green-300">AAR complete. Ready to finalize?</p>
               <button onClick={finalize} disabled={finalizing}
-                className="flex items-center gap-2 px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+                className="flex items-center gap-2 px-4 py-1.5 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
                 {finalizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 {finalizing ? 'Saving...' : 'Finalize AAR'}
               </button>
@@ -277,14 +277,14 @@ export default function DebriefPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={listening ? 'Listening... speak naturally' : 'Talk to Chief... (Enter to send, Shift+Enter for new line)'}
+              placeholder={listening ? 'Listening... speak naturally' : 'Talk to First Sergeant... (Enter to send, Shift+Enter for new line)'}
               rows={1}
-              className="flex-1 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              className="flex-1 px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-green-500/40"
             />
 
             {/* Send button */}
             <button onClick={sendMessage} disabled={!input.trim() || sending}
-              className="p-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors shrink-0">
+              className="p-3 bg-green-700 hover:bg-green-600 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-lg transition-colors shrink-0">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </div>

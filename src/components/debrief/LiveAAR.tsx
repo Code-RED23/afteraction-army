@@ -22,10 +22,10 @@ export function LiveAAR({ aar, phase }: LiveAARProps) {
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-amber-400" />
+          <FileText className="w-4 h-4 text-green-400" />
           <h3 className="text-sm font-semibold text-gray-200">Live AAR Document</h3>
         </div>
-        <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-900/30 text-amber-400 border border-amber-800/30">
+        <span className="text-xs font-mono px-2 py-0.5 rounded bg-green-900/30 text-green-400 border border-green-800/30">
           {phase || 'opening'}
         </span>
       </div>
@@ -33,18 +33,18 @@ export function LiveAAR({ aar, phase }: LiveAARProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Summary */}
         {aar.summary && (
-          <div className="bg-amber-950/20 border border-amber-900/30 rounded-lg p-3">
-            <p className="text-xs text-amber-300/60 uppercase tracking-wider mb-1">Summary</p>
-            <p className="text-sm text-amber-200">{aar.summary}</p>
+          <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-3">
+            <p className="text-xs text-green-300/60 uppercase tracking-wider mb-1">Summary</p>
+            <p className="text-sm text-green-200">{aar.summary}</p>
           </div>
         )}
 
-        {/* Incident type + tags */}
-        {(aar.incident_type || aar.tags.length > 0) && (
+        {/* Mission type + tags */}
+        {(aar.mission_type || aar.tags.length > 0) && (
           <div className="flex gap-2 flex-wrap">
-            {aar.incident_type && (
+            {aar.mission_type && (
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-300">
-                {aar.incident_type}
+                {aar.mission_type}
               </span>
             )}
             {aar.tags.map((tag, i) => (
@@ -67,7 +67,7 @@ export function LiveAAR({ aar, phase }: LiveAARProps) {
               className={cn(
                 'border rounded-lg transition-all duration-500',
                 isActivePhase
-                  ? 'border-amber-800/50 bg-amber-950/10 shadow-[0_0_15px_rgba(217,119,6,0.05)]'
+                  ? 'border-green-800/50 bg-green-950/10 shadow-[0_0_15px_rgba(34,197,94,0.05)]'
                   : hasContent
                   ? 'border-gray-800 bg-gray-900/50'
                   : 'border-gray-800/50 bg-gray-900/20'
@@ -75,11 +75,11 @@ export function LiveAAR({ aar, phase }: LiveAARProps) {
             >
               <div className="px-3 py-2 border-b border-gray-800/50 flex items-center gap-2">
                 {isActivePhase && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 )}
                 <h4 className={cn(
                   'text-xs font-semibold uppercase tracking-wider',
-                  isActivePhase ? 'text-amber-400' : hasContent ? 'text-gray-400' : 'text-gray-600'
+                  isActivePhase ? 'text-green-400' : hasContent ? 'text-gray-400' : 'text-gray-600'
                 )}>
                   {section.label}
                 </h4>
@@ -101,7 +101,7 @@ export function LiveAAR({ aar, phase }: LiveAARProps) {
         {aar.action_items.length > 0 && (
           <div className="border border-gray-800 rounded-lg bg-gray-900/50">
             <div className="px-3 py-2 border-b border-gray-800/50">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-400">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-green-400">
                 Action Items ({aar.action_items.length})
               </h4>
             </div>

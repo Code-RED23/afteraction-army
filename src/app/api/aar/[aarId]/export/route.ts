@@ -13,18 +13,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aarI
       .from('aars')
       .select('*, action_items(*)')
       .eq('id', aarId)
-      .eq('agency_id', ctx.agencyId)
+      .eq('platoon_id', ctx.platoonId)
       .single();
 
     if (!aar) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    const { data: agency } = await supabase.from('agencies').select('name').eq('id', ctx.agencyId).single();
+    const { data: platoon } = await supabase.from('platoons').select('name').eq('id', ctx.platoonId).single();
 
     const format = req.nextUrl.searchParams.get('format') || 'pdf';
 
     if (format === 'docx') {
       const { generateDocx } = await import('@/lib/export/docx');
-      const buffer = await generateDocx(aar, agency?.name);
+      const buffer = await generateDocx(aar, platoon?.name);
       return new Response(new Uint8Array(buffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ aarI
     const { renderToBuffer } = await import('@react-pdf/renderer');
     const { AARDocument } = await import('@/lib/export/pdf');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const element = React.createElement(AARDocument, { aar, agencyName: agency?.name });
+    const element = React.createElement(AARDocument, { aar, unitName: platoon?.name });
     const buffer = await renderToBuffer(element as any);
     return new Response(new Uint8Array(buffer), {
       headers: {

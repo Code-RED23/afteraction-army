@@ -7,11 +7,11 @@ export async function GET() {
     const ctx = await getAuthContext();
     const supabase = createServiceClient();
 
-    // Fetch all finalized AARs for this agency
+    // Fetch all finalized AARs for this platoon
     const { data: aars } = await supabase
       .from('aars')
-      .select('id, summary, incident_type, incident_date, what_was_planned, what_happened, why_difference, sustain_improve, tags, created_at')
-      .eq('agency_id', ctx.agencyId)
+      .select('id, summary, mission_type, mission_date, what_was_planned, sustain_improve, tags, created_at')
+      .eq('platoon_id', ctx.platoonId)
       .in('status', ['review', 'final'])
       .order('created_at', { ascending: false })
       .limit(100);
@@ -26,11 +26,11 @@ export async function GET() {
     const allTags: Record<string, number> = {};
 
     for (const aar of aars) {
-      if (aar.incident_type) {
-        typeCounts[aar.incident_type] = (typeCounts[aar.incident_type] || 0) + 1;
+      if (aar.mission_type) {
+        typeCounts[aar.mission_type] = (typeCounts[aar.mission_type] || 0) + 1;
       }
-      const month = aar.incident_date
-        ? new Date(aar.incident_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      const month = aar.mission_date
+        ? new Date(aar.mission_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
         : 'Unknown';
       monthCounts[month] = (monthCounts[month] || 0) + 1;
 
@@ -55,7 +55,6 @@ export async function GET() {
     const themes: string[] = [];
     for (const aar of aars) {
       if (aar.sustain_improve) {
-        // Simple keyword extraction — real version would use embeddings
         const words = aar.sustain_improve.toLowerCase().split(/\s+/);
         for (const word of words) {
           if (word.length > 6) themes.push(word);
@@ -63,7 +62,6 @@ export async function GET() {
       }
     }
 
-    // Count recurring themes
     const themeCounts: Record<string, number> = {};
     for (const t of themes) {
       themeCounts[t] = (themeCounts[t] || 0) + 1;
@@ -86,8 +84,8 @@ export async function GET() {
       recentAARs: aars.slice(0, 5).map((a) => ({
         id: a.id,
         summary: a.summary,
-        incident_type: a.incident_type,
-        incident_date: a.incident_date,
+        mission_type: a.mission_type,
+        mission_date: a.mission_date,
       })),
     });
   } catch (err: unknown) {

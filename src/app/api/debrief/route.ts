@@ -10,7 +10,7 @@ function getAnthropic() {
 
 export const maxDuration = 120;
 
-// POST /api/debrief — Send a message to Chief and get streaming response
+// POST /api/debrief — Send a message to First Sergeant and get streaming response
 export async function POST(req: Request) {
   try {
     const ctx = await getAuthContext();
@@ -18,12 +18,12 @@ export async function POST(req: Request) {
 
     const supabase = createServiceClient();
 
-    // Verify AAR belongs to this agency
+    // Verify AAR belongs to this platoon
     const { data: aar } = await supabase
       .from('aars')
-      .select('id, agency_id')
+      .select('id, platoon_id')
       .eq('id', aarId)
-      .eq('agency_id', ctx.agencyId)
+      .eq('platoon_id', ctx.platoonId)
       .single();
 
     if (!aar) {
@@ -35,16 +35,16 @@ export async function POST(req: Request) {
     try {
       const { data: pastAARs } = await supabase
         .from('aars')
-        .select('summary, incident_type, incident_date, what_was_planned, sustain_improve')
-        .eq('agency_id', ctx.agencyId)
+        .select('summary, mission_type, mission_date, what_was_planned, sustain_improve')
+        .eq('platoon_id', ctx.platoonId)
         .eq('status', 'final')
         .order('created_at', { ascending: false })
         .limit(5);
 
       if (pastAARs && pastAARs.length > 0) {
-        similarContext = '\n\n## RECENT AGENCY AARS (for institutional memory):\n' +
+        similarContext = '\n\n## RECENT UNIT AARS (for institutional memory):\n' +
           pastAARs.map((p, i) =>
-            `${i + 1}. [${p.incident_date || 'undated'}] ${p.incident_type || 'Incident'}: ${p.summary || 'No summary'}\n   Key lesson: ${p.sustain_improve?.slice(0, 200) || 'N/A'}`
+            `${i + 1}. [${p.mission_date || 'undated'}] ${p.mission_type || 'Mission'}: ${p.summary || 'No summary'}\n   Key lesson: ${p.sustain_improve?.slice(0, 200) || 'N/A'}`
           ).join('\n');
       }
     } catch {

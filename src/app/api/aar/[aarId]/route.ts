@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuthContext, ensureAdmin } from '@/lib/auth';
+import { getAuthContext, ensureNCO } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ aarId: string }> }) {
@@ -12,7 +12,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ aarId: 
       .from('aars')
       .select('*, action_items(*), profiles!aars_created_by_fkey(full_name, email)')
       .eq('id', aarId)
-      .eq('agency_id', ctx.agencyId)
+      .eq('platoon_id', ctx.platoonId)
       .single();
 
     if (!aar) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -29,11 +29,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ aarId:
     const body = await req.json();
     const supabase = createServiceClient();
 
-    const { data: existing } = await supabase.from('aars').select('id').eq('id', aarId).eq('agency_id', ctx.agencyId).single();
+    const { data: existing } = await supabase.from('aars').select('id').eq('id', aarId).eq('platoon_id', ctx.platoonId).single();
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const { action_items, ...aarFields } = body;
-    const allowed = ['incident_date','incident_type','unit','location','incident_number','what_was_planned','what_happened','why_difference','sustain_improve','summary','tags','status','conversation'];
+    const allowed = ['mission_date','mission_type','operation_name','unit_designation','location','grid_reference','training_event','what_was_planned','what_happened','why_difference','sustain_improve','summary','tags','status','conversation'];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) { if (key in aarFields) updates[key] = aarFields[key]; }
 
@@ -63,13 +63,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ aarId:
 export async function DELETE(_req: Request, { params }: { params: Promise<{ aarId: string }> }) {
   try {
     const ctx = await getAuthContext();
-    await ensureAdmin(ctx);
+    await ensureNCO(ctx);
     const { aarId } = await params;
     const supabase = createServiceClient();
 
-    await supabase.from('aars').delete().eq('id', aarId).eq('agency_id', ctx.agencyId);
+    await supabase.from('aars').delete().eq('id', aarId).eq('platoon_id', ctx.platoonId);
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Error' }, { status: err instanceof Error && err.message.includes('admin') ? 403 : 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Error' }, { status: err instanceof Error && err.message.includes('NCO') ? 403 : 500 });
   }
 }

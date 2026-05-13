@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     const { data: invite } = await supabase.from('invites').select('*').eq('email', email).eq('status', 'pending').single();
     if (invite) {
-      await supabase.from('profiles').insert({ clerk_user_id: id, agency_id: invite.agency_id, role: invite.role, full_name: fullName, email });
+      await supabase.from('profiles').insert({ clerk_user_id: id, platoon_id: invite.platoon_id, role: invite.role, full_name: fullName, email });
       await supabase.from('invites').update({ status: 'accepted' }).eq('id', invite.id);
     } else {
       await supabase.from('profiles').insert({ clerk_user_id: id, full_name: fullName, email });

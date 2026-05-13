@@ -1,51 +1,74 @@
--- AfterAction AI V2 - Database Schema
--- Conversational debrief model with vector embeddings for pattern detection
+-- AfterAction Army — Database Schema
+-- Squad-level AARs rolling up to Platoon, with vector embeddings for pattern detection
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "vector";  -- pgvector for semantic search
 
 -- ============================================
--- AGENCIES
+-- PLATOONS (parent organization)
 -- ============================================
-CREATE TABLE agencies (
+CREATE TABLE platoons (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
+  name TEXT NOT NULL,             -- e.g. "1st Platoon, B Co, 2-506 IN"
+  company TEXT,                   -- e.g. "Bravo Company"
+  battalion TEXT,                 -- e.g. "2-506 IN"
+  brigade TEXT,                   -- e.g. "3BCT, 101st ABN"
+  installation TEXT,              -- e.g. "Fort Campbell"
   state TEXT NOT NULL,
-  size TEXT NOT NULL DEFAULT 'small',
   logo_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================
--- PROFILES
+-- SQUADS (the primary operating unit for AARs)
+-- ============================================
+CREATE TABLE squads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  platoon_id UUID NOT NULL REFERENCES platoons(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,             -- e.g. "1st Squad" or "Weapons Squad"
+  callsign TEXT,                  -- e.g. "Bandit 1-1"
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_squads_platoon_id ON squads(platoon_id);
+
+-- ============================================
+-- PROFILES (Soldiers)
 -- ============================================
 CREATE TABLE profiles (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   clerk_user_id TEXT UNIQUE NOT NULL,
-  agency_id UUID REFERENCES agencies(id) ON DELETE CASCADE,
-  role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  platoon_id UUID REFERENCES platoons(id) ON DELETE CASCADE,
+  squad_id UUID REFERENCES squads(id) ON DELETE SET NULL,
+  role TEXT NOT NULL DEFAULT 'soldier' CHECK (role IN ('admin', 'nco', 'soldier')),
+  rank TEXT,                      -- e.g. "SSG", "SPC", "1LT"
   full_name TEXT NOT NULL DEFAULT '',
   email TEXT NOT NULL DEFAULT '',
+  duty_position TEXT,             -- e.g. "Squad Leader", "RTO", "Team Leader"
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_profiles_clerk_user_id ON profiles(clerk_user_id);
-CREATE INDEX idx_profiles_agency_id ON profiles(agency_id);
+CREATE INDEX idx_profiles_platoon_id ON profiles(platoon_id);
+CREATE INDEX idx_profiles_squad_id ON profiles(squad_id);
 
 -- ============================================
--- AARS - Now stores the full conversation + structured output
+-- AARS - Stores the full conversation + structured output
 -- ============================================
 CREATE TABLE aars (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  agency_id UUID NOT NULL REFERENCES agencies(id) ON DELETE CASCADE,
+  platoon_id UUID NOT NULL REFERENCES platoons(id) ON DELETE CASCADE,
+  squad_id UUID REFERENCES squads(id) ON DELETE SET NULL,
   created_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
 
-  -- Incident metadata
-  incident_date DATE,
-  incident_type TEXT,
-  unit TEXT,
-  location TEXT,
-  incident_number TEXT,
+  -- Mission metadata
+  mission_date DATE,
+  mission_type TEXT,              -- e.g. "Movement to Contact", "Deliberate Attack", "Defense"
+  operation_name TEXT,            -- e.g. "OP Bayonet Fury"
+  unit_designation TEXT,          -- e.g. "1st Squad, 1st PLT"
+  location TEXT,                  -- e.g. "Training Area 12, Fort Campbell"
+  grid_reference TEXT,            -- e.g. "11S NU 123 456"
+  training_event TEXT,            -- e.g. "Squad LFX", "PLT FTX", "CTC Rotation"
 
   -- Structured AAR output (built live during conversation)
   what_was_planned TEXT,
@@ -61,14 +84,15 @@ CREATE TABLE aars (
   -- Vector embedding for semantic similarity search
   embedding VECTOR(1536),
 
-  -- Status: active (debrief in progress), review, final
+  -- Status: active (AAR in progress), review, final
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'review', 'final')),
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_aars_agency_id ON aars(agency_id);
+CREATE INDEX idx_aars_platoon_id ON aars(platoon_id);
+CREATE INDEX idx_aars_squad_id ON aars(squad_id);
 CREATE INDEX idx_aars_created_at ON aars(created_at DESC);
 CREATE INDEX idx_aars_status ON aars(status);
 
@@ -84,9 +108,11 @@ ALTER TABLE aars ADD COLUMN search_vector TSVECTOR
       COALESCE(what_happened, '') || ' ' ||
       COALESCE(why_difference, '') || ' ' ||
       COALESCE(sustain_improve, '') || ' ' ||
-      COALESCE(incident_type, '') || ' ' ||
-      COALESCE(unit, '') || ' ' ||
-      COALESCE(location, '')
+      COALESCE(mission_type, '') || ' ' ||
+      COALESCE(operation_name, '') || ' ' ||
+      COALESCE(unit_designation, '') || ' ' ||
+      COALESCE(location, '') || ' ' ||
+      COALESCE(training_event, '')
     )
   ) STORED;
 
@@ -109,15 +135,15 @@ CREATE TRIGGER aars_updated_at
 -- Semantic search function: find similar AARs by embedding
 CREATE OR REPLACE FUNCTION match_aars(
   query_embedding VECTOR(1536),
-  match_agency_id UUID,
+  match_platoon_id UUID,
   match_threshold FLOAT DEFAULT 0.7,
   match_count INT DEFAULT 5
 )
 RETURNS TABLE (
   id UUID,
   summary TEXT,
-  incident_type TEXT,
-  incident_date DATE,
+  mission_type TEXT,
+  mission_date DATE,
   similarity FLOAT
 )
 LANGUAGE plpgsql
@@ -127,11 +153,11 @@ BEGIN
   SELECT
     aars.id,
     aars.summary,
-    aars.incident_type,
-    aars.incident_date,
+    aars.mission_type,
+    aars.mission_date,
     1 - (aars.embedding <=> query_embedding) AS similarity
   FROM aars
-  WHERE aars.agency_id = match_agency_id
+  WHERE aars.platoon_id = match_platoon_id
     AND aars.embedding IS NOT NULL
     AND aars.status = 'final'
     AND 1 - (aars.embedding <=> query_embedding) > match_threshold
@@ -147,7 +173,7 @@ CREATE TABLE action_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   aar_id UUID NOT NULL REFERENCES aars(id) ON DELETE CASCADE,
   description TEXT NOT NULL,
-  assigned_to TEXT,
+  assigned_to TEXT,               -- Duty position: "PSG", "Alpha TL", "RTO"
   due_date DATE,
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
   priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('high', 'medium', 'low')),
@@ -161,9 +187,9 @@ CREATE INDEX idx_action_items_aar_id ON action_items(aar_id);
 -- ============================================
 CREATE TABLE invites (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  agency_id UUID NOT NULL REFERENCES agencies(id) ON DELETE CASCADE,
+  platoon_id UUID NOT NULL REFERENCES platoons(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  role TEXT NOT NULL DEFAULT 'soldier' CHECK (role IN ('admin', 'nco', 'soldier')),
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted')),
   invited_by UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -174,24 +200,28 @@ CREATE INDEX idx_invites_email ON invites(email);
 -- ============================================
 -- ROW LEVEL SECURITY
 -- ============================================
-ALTER TABLE agencies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platoons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE squads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE action_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invites ENABLE ROW LEVEL SECURITY;
 
 -- RLS is a safety net. All writes use service_role key.
-CREATE POLICY "agency_read" ON agencies FOR SELECT
-  USING (id IN (SELECT agency_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
+CREATE POLICY "platoon_read" ON platoons FOR SELECT
+  USING (id IN (SELECT platoon_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
+
+CREATE POLICY "squads_read" ON squads FOR SELECT
+  USING (platoon_id IN (SELECT platoon_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
 
 CREATE POLICY "profiles_read" ON profiles FOR SELECT
-  USING (agency_id IN (SELECT agency_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
+  USING (platoon_id IN (SELECT platoon_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
 
 CREATE POLICY "aars_read" ON aars FOR SELECT
-  USING (agency_id IN (SELECT agency_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
+  USING (platoon_id IN (SELECT platoon_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true)));
 
 CREATE POLICY "action_items_read" ON action_items FOR SELECT
-  USING (aar_id IN (SELECT id FROM aars WHERE agency_id IN (SELECT agency_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true))));
+  USING (aar_id IN (SELECT id FROM aars WHERE platoon_id IN (SELECT platoon_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true))));
 
 CREATE POLICY "invites_read" ON invites FOR SELECT
-  USING (agency_id IN (SELECT agency_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true) AND role = 'admin'));
+  USING (platoon_id IN (SELECT platoon_id FROM profiles WHERE clerk_user_id = current_setting('app.clerk_user_id', true) AND role IN ('admin', 'nco')));

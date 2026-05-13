@@ -1,21 +1,35 @@
 // === Database Types ===
 
-export interface Agency {
+export interface Platoon {
   id: string;
   name: string;
+  company: string | null;
+  battalion: string | null;
+  brigade: string | null;
+  installation: string | null;
   state: string;
-  size: string;
   logo_url: string | null;
+  created_at: string;
+}
+
+export interface Squad {
+  id: string;
+  platoon_id: string;
+  name: string;
+  callsign: string | null;
   created_at: string;
 }
 
 export interface Profile {
   id: string;
   clerk_user_id: string;
-  agency_id: string;
-  role: 'admin' | 'member';
+  platoon_id: string;
+  squad_id: string | null;
+  role: 'admin' | 'nco' | 'soldier';
+  rank: string | null;
   full_name: string;
   email: string;
+  duty_position: string | null;
   created_at: string;
 }
 
@@ -23,13 +37,16 @@ export type AARStatus = 'active' | 'review' | 'final';
 
 export interface AAR {
   id: string;
-  agency_id: string;
+  platoon_id: string;
+  squad_id: string | null;
   created_by: string;
-  incident_date: string | null;
-  incident_type: string | null;
-  unit: string | null;
+  mission_date: string | null;
+  mission_type: string | null;
+  operation_name: string | null;
+  unit_designation: string | null;
   location: string | null;
-  incident_number: string | null;
+  grid_reference: string | null;
+  training_event: string | null;
   what_was_planned: string | null;
   what_happened: string | null;
   why_difference: string | null;
@@ -56,9 +73,9 @@ export interface ActionItem {
 
 export interface Invite {
   id: string;
-  agency_id: string;
+  platoon_id: string;
   email: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'nco' | 'soldier';
   status: 'pending' | 'accepted';
   invited_by: string;
   created_at: string;
@@ -75,12 +92,12 @@ export interface ConversationMessage {
 }
 
 export type DebriefPhase =
-  | 'opening'        // "Tell me about the incident"
-  | 'what_happened'  // Gathering facts
+  | 'opening'        // "Tell me about the mission"
+  | 'what_happened'  // Gathering the timeline
   | 'decisions'      // Key decisions and why
   | 'challenges'     // What went wrong, root causes
-  | 'wins'           // What went well
-  | 'actions'        // Action items and ownership
+  | 'wins'           // Sustains — what went right
+  | 'actions'        // Improves — action items and ownership
   | 'closing';       // Summary and wrap-up
 
 // === Live AAR State ===
@@ -91,7 +108,7 @@ export interface LiveAARState {
   why_difference: string;
   sustain_improve: string;
   summary: string;
-  incident_type: string;
+  mission_type: string;
   tags: string[];
   action_items: {
     description: string;
@@ -117,8 +134,8 @@ export interface Pattern {
 export interface SimilarAAR {
   id: string;
   summary: string;
-  incident_type: string | null;
-  incident_date: string | null;
+  mission_type: string | null;
+  mission_date: string | null;
   similarity: number;
 }
 
@@ -127,8 +144,9 @@ export interface SimilarAAR {
 export interface AuthContext {
   userId: string;
   profile: Profile;
-  agencyId: string;
-  role: 'admin' | 'member';
+  platoonId: string;
+  squadId: string | null;
+  role: 'admin' | 'nco' | 'soldier';
 }
 
 export interface AARWithActionItems extends AAR {

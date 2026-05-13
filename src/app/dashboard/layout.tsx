@@ -9,14 +9,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!userId) redirect('/sign-in');
 
   const supabase = createServiceClient();
-  const { data: profile } = await supabase.from('profiles').select('*, agencies(*)').eq('clerk_user_id', userId).single();
-  if (!profile || !profile.agency_id) redirect('/onboarding');
+  const { data: profile } = await supabase.from('profiles').select('*, platoons(*)').eq('clerk_user_id', userId).single();
+  if (!profile || !profile.platoon_id) redirect('/onboarding');
 
-  const agency = profile.agencies;
+  const platoon = profile.platoons;
 
   return (
     <div className="min-h-screen bg-gray-950 flex">
-      <Sidebar agencyName={agency?.name || 'Agency'} userRole={profile.role} />
+      <Sidebar unitName={platoon?.name || 'Unit'} userRole={profile.role} />
       <div className="flex-1 flex flex-col min-w-0">
         <Header userName={profile.full_name || profile.email} />
         <main className="flex-1 overflow-auto">{children}</main>

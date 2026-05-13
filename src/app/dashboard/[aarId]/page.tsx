@@ -9,9 +9,9 @@ import { ChatMessage } from '@/components/debrief/ChatMessage';
 import type { AARWithActionItems, ActionItem } from '@/types';
 
 const SECTIONS = [
-  { key: 'what_was_planned', label: '1. What Was Planned?' },
-  { key: 'what_happened', label: '2. What Actually Happened?' },
-  { key: 'why_difference', label: '3. Why the Difference?' },
+  { key: 'what_was_planned', label: '1. What Was Planned? (Mission/Intent)' },
+  { key: 'what_happened', label: '2. What Actually Happened? (Execution)' },
+  { key: 'why_difference', label: '3. Why the Difference? (Root Causes)' },
   { key: 'sustain_improve', label: '4. Sustain / Improve' },
 ] as const;
 
@@ -79,7 +79,7 @@ export default function AARReviewPage() {
     setAar(aar ? { ...aar, status: 'final' } : null);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 text-amber-400 animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 text-green-400 animate-spin" /></div>;
   if (!aar) return null;
 
   const conversation = aar.conversation || [];
@@ -96,36 +96,49 @@ export default function AARReviewPage() {
           <a href={`/api/aar/${aarId}/export?format=pdf`} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 border border-gray-800 rounded-lg hover:text-gray-200"><Download className="w-3.5 h-3.5" />PDF</a>
           <a href={`/api/aar/${aarId}/export?format=docx`} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 border border-gray-800 rounded-lg hover:text-gray-200"><FileText className="w-3.5 h-3.5" />Word</a>
           {aar.status !== 'final' && (
-            <button onClick={finalize} className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-lg"><CheckCircle className="w-3.5 h-3.5" />Finalize</button>
+            <button onClick={finalize} className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs bg-green-700 hover:bg-green-600 text-white font-medium rounded-lg"><CheckCircle className="w-3.5 h-3.5" />Finalize</button>
           )}
         </div>
       </div>
 
       {/* Status + type */}
       <div className="flex items-center gap-3 mb-4">
-        <span className={cn('text-xs font-mono px-2 py-0.5 rounded', aar.status === 'final' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/40' : 'bg-amber-900/30 text-amber-400 border border-amber-800/40')}>
+        <span className={cn('text-xs font-mono px-2 py-0.5 rounded', aar.status === 'final' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/40' : 'bg-green-900/30 text-green-400 border border-green-800/40')}>
           {aar.status === 'final' ? 'Finalized' : 'In Review'}
         </span>
-        {aar.incident_type && <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400">{aar.incident_type}</span>}
+        {aar.mission_type && <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400">{aar.mission_type}</span>}
       </div>
 
       {/* Metadata */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
         {[
-          { label: 'Date', field: 'incident_date', type: 'date' },
-          { label: 'Type', field: 'incident_type', type: 'text', placeholder: 'e.g. Structure Fire' },
-          { label: 'Unit', field: 'unit', type: 'text', placeholder: 'e.g. Engine 7' },
-          { label: 'Location', field: 'location', type: 'text', placeholder: 'e.g. 123 Main St' },
+          { label: 'Mission Date', field: 'mission_date', type: 'date' },
+          { label: 'Mission Type', field: 'mission_type', type: 'text', placeholder: 'e.g. Movement to Contact' },
+          { label: 'Unit', field: 'unit_designation', type: 'text', placeholder: 'e.g. 1st Squad, 1st PLT' },
+          { label: 'Location', field: 'location', type: 'text', placeholder: 'e.g. TA-12, Fort Campbell' },
         ].map((f) => (
           <div key={f.field}>
             <label className="text-xs text-gray-600 block mb-1">{f.label}</label>
             <input type={f.type} value={(aar as unknown as Record<string, string | null>)[f.field] || ''} onChange={(e) => updateField(f.field, e.target.value)} placeholder={f.placeholder}
-              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-amber-500/40" />
+              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500/40" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: 'Operation Name', field: 'operation_name', placeholder: 'e.g. OP Bayonet Fury' },
+          { label: 'Grid Reference', field: 'grid_reference', placeholder: 'e.g. 11S NU 123 456' },
+          { label: 'Training Event', field: 'training_event', placeholder: 'e.g. Squad LFX' },
+        ].map((f) => (
+          <div key={f.field}>
+            <label className="text-xs text-gray-600 block mb-1">{f.label}</label>
+            <input type="text" value={(aar as unknown as Record<string, string | null>)[f.field] || ''} onChange={(e) => updateField(f.field, e.target.value)} placeholder={f.placeholder}
+              className="w-full px-2.5 py-1.5 bg-gray-900 border border-gray-800 rounded text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:ring-1 focus:ring-green-500/40" />
           </div>
         ))}
       </div>
 
-      {aar.summary && <div className="bg-amber-950/20 border border-amber-900/30 rounded-lg p-4 mb-6"><p className="text-sm text-amber-300">{aar.summary}</p></div>}
+      {aar.summary && <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-4 mb-6"><p className="text-sm text-green-300">{aar.summary}</p></div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
@@ -143,7 +156,7 @@ export default function AARReviewPage() {
           <div className="border border-gray-800 rounded-lg bg-gray-900/50">
             <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-200">Action Items ({aar.action_items.length})</h3>
-              <button onClick={addActionItem} className="p-1 text-gray-500 hover:text-amber-400"><Plus className="w-4 h-4" /></button>
+              <button onClick={addActionItem} className="p-1 text-gray-500 hover:text-green-400"><Plus className="w-4 h-4" /></button>
             </div>
             <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
               {aar.action_items.length === 0 && <p className="text-xs text-gray-600 text-center py-4">No action items.</p>}
@@ -160,7 +173,7 @@ export default function AARReviewPage() {
                       className="text-xs bg-gray-900 border border-gray-800 rounded px-1.5 py-0.5 text-gray-400 focus:outline-none">
                       <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
                     </select>
-                    <input type="text" value={item.assigned_to || ''} onChange={(e) => updateActionItem(i, 'assigned_to', e.target.value)} placeholder="Assign..."
+                    <input type="text" value={item.assigned_to || ''} onChange={(e) => updateActionItem(i, 'assigned_to', e.target.value)} placeholder="Assign to (PSG, TL, etc.)..."
                       className="text-xs bg-gray-900 border border-gray-800 rounded px-1.5 py-0.5 text-gray-400 placeholder-gray-700 focus:outline-none flex-1" />
                   </div>
                 </div>
@@ -168,11 +181,11 @@ export default function AARReviewPage() {
             </div>
           </div>
 
-          {/* Debrief Transcript */}
+          {/* AAR Transcript */}
           {conversation.length > 0 && (
             <div className="border border-gray-800 rounded-lg bg-gray-900/50">
               <button onClick={() => setConvoOpen(!convoOpen)} className="w-full px-4 py-3 flex items-center justify-between text-sm font-semibold text-gray-200">
-                <span className="flex items-center gap-2"><MessageSquare className="w-4 h-4 text-amber-400" />Debrief Conversation</span>
+                <span className="flex items-center gap-2"><MessageSquare className="w-4 h-4 text-green-400" />AAR Conversation</span>
                 {convoOpen ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
               </button>
               {convoOpen && (

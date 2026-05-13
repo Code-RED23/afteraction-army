@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 const mobileNav = [
   { href: '/dashboard', label: 'AARs', icon: LayoutDashboard },
-  { href: '/dashboard/debrief', label: 'Start Debrief', icon: MessageSquarePlus },
+  { href: '/dashboard/debrief', label: 'Run AAR', icon: MessageSquarePlus },
   { href: '/dashboard/insights', label: 'Insights', icon: TrendingUp },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -19,9 +19,9 @@ export function Header({ userName }: { userName: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const title = pathname === '/dashboard' ? 'After Action Reviews'
-    : pathname.startsWith('/dashboard/debrief') ? 'Debrief with Chief'
-    : pathname.startsWith('/dashboard/insights') ? 'Pattern Insights'
-    : pathname.startsWith('/dashboard/settings') ? 'Agency Settings'
+    : pathname.startsWith('/dashboard/debrief') ? 'AAR with First Sergeant'
+    : pathname.startsWith('/dashboard/insights') ? 'Unit Insights'
+    : pathname.startsWith('/dashboard/settings') ? 'Unit Settings'
     : pathname.match(/\/dashboard\/[^/]+$/) ? 'Review AAR'
     : 'Dashboard';
 
@@ -33,7 +33,7 @@ export function Header({ userName }: { userName: string }) {
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <Link href="/dashboard" className="md:hidden flex items-center gap-2">
-            <Shield className="w-4 h-4 text-amber-400" />
+            <Shield className="w-4 h-4 text-green-400" />
             <span className="text-sm font-bold">AfterAction</span>
           </Link>
           <h1 className="hidden md:block text-sm font-medium text-gray-300">{title}</h1>
@@ -51,7 +51,7 @@ export function Header({ userName }: { userName: string }) {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
-                  className={cn('flex items-center gap-3 px-4 py-3 rounded-lg text-sm', isActive ? 'bg-amber-900/20 text-amber-400' : 'text-gray-400 hover:text-gray-200')}>
+                  className={cn('flex items-center gap-3 px-4 py-3 rounded-lg text-sm', isActive ? 'bg-green-900/20 text-green-400' : 'text-gray-400 hover:text-gray-200')}>
                   <Icon className="w-5 h-5" />{item.label}
                 </Link>
               );

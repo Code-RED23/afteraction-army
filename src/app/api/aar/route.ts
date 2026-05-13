@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthContext } from '@/lib/auth';
 import { createServiceClient } from '@/lib/supabase/server';
 
-// GET /api/aar — List AARs
+// GET /api/aar — List AARs for this platoon
 export async function GET(req: Request) {
   try {
     const ctx = await getAuthContext();
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     let query = supabase
       .from('aars')
       .select('*, action_items(count), profiles!aars_created_by_fkey(full_name)', { count: 'exact' })
-      .eq('agency_id', ctx.agencyId)
+      .eq('platoon_id', ctx.platoonId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/aar — Create new AAR (starts a debrief session)
+// POST /api/aar — Create new AAR (starts an AAR session)
 export async function POST() {
   try {
     const ctx = await getAuthContext();
@@ -41,7 +41,8 @@ export async function POST() {
     const { data: aar, error } = await supabase
       .from('aars')
       .insert({
-        agency_id: ctx.agencyId,
+        platoon_id: ctx.platoonId,
+        squad_id: ctx.squadId,
         created_by: ctx.profile.id,
         status: 'active',
         conversation: [],
