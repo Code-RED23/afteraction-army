@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'AfterAction AI',
-  description: 'Your AI debrief partner for first responders',
+  title: 'AfterAction Army',
+  description: 'AI-powered After Action Review facilitator for US Army squads and platoons',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
